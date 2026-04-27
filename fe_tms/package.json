@@ -1,0 +1,45 @@
+{
+  "name": "hub-logistics-vue",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.ts,.tsx",
+    "format": "prettier --write ."
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.103.3",
+    "@tailwindcss/vite": "^4.2.1",
+    "@vueuse/core": "^13.0.0",
+    "axios": "^1.15.1",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "leaflet": "^1.9.4",
+    "lucide-vue-next": "^0.475.0",
+    "pinia": "^2.3.1",
+    "recharts": "^2.15.0",
+    "sonner": "^2.0.7",
+    "tailwind-merge": "^3.5.0",
+    "tw-animate-css": "^1.3.4",
+    "vue": "^3.5.13",
+    "vue-router": "^4.5.0",
+    "vue-sonner": "^1.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
+    "@types/leaflet": "^1.9.21",
+    "@types/node": "^22.16.5",
+    "@vitejs/plugin-vue": "^5.2.4",
+    "@vue/tsconfig": "^0.7.0",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.10",
+    "tailwindcss": "^4.2.4",
+    "typescript": "^5.9.3",
+    "vite": "^6.3.5",
+    "vite-tsconfig-paths": "^6.0.2",
+    "vue-tsc": "^2.2.8"
+  }
+}
