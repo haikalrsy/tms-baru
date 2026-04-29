@@ -29,8 +29,8 @@ class AccountController extends Controller
     // POST /api/admin/accounts/{user}/approve
     public function approve(Request $request, User $user)
     {
-        if ($user->account_status !== 'pending') {
-            return response()->json(['success' => false, 'message' => 'Account is not in pending status.'], 422);
+        if ($user->account_status === 'approved') {
+            return response()->json(['success' => false, 'message' => 'Account is already approved.'], 422);
         }
 
         $user->update([
@@ -43,6 +43,34 @@ class AccountController extends Controller
         ActivityLog::log('account.approved', $user);
 
         return response()->json(['success' => true, 'message' => 'Account approved.', 'data' => $user]);
+    }
+
+    // POST /api/admin/accounts/approve-all
+    public function approveAll(Request $request)
+    {
+        $users = User::where('account_status', 'pending')->get();
+
+        if ($users->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'Tidak ada akun pending.'], 422);
+        }
+
+        $count = 0;
+        foreach ($users as $user) {
+            $user->update([
+                'account_status' => 'approved',
+                'approved_by'    => $request->user()->id,
+                'approved_at'    => now(),
+            ]);
+            Mail::to($user->email)->send(new AccountApprovedMail($user));
+            ActivityLog::log('account.approved', $user);
+            $count++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$count} akun berhasil disetujui.",
+            'count'   => $count,
+        ]);
     }
 
     // POST /api/admin/accounts/{user}/reject
@@ -63,7 +91,6 @@ class AccountController extends Controller
     // POST /api/admin/accounts/{user}/suspend
     public function suspend(Request $request, User $user)
     {
-        // Admin tidak bisa di-suspend
         if ($user->role === 'admin') {
             return response()->json([
                 'success' => false,
@@ -73,9 +100,29 @@ class AccountController extends Controller
 
         $user->update(['account_status' => 'suspended']);
         $user->tokens()->delete();
+        $user->delete(); // soft delete — hilang dari table, data tetap ada
         ActivityLog::log('account.suspended', $user);
 
         return response()->json(['success' => true, 'message' => 'Account suspended.']);
+    }
+
+    // POST /api/admin/accounts/{user}/reactivate
+    public function reactivate(Request $request, User $user)
+    {
+        if ($user->account_status !== 'suspended') {
+            return response()->json(['success' => false, 'message' => 'Account is not suspended.'], 422);
+        }
+
+        $user->update([
+            'account_status' => 'approved',
+            'approved_by'    => $request->user()->id,
+            'approved_at'    => now(),
+        ]);
+
+        Mail::to($user->email)->send(new AccountApprovedMail($user));
+        ActivityLog::log('account.reactivated', $user);
+
+        return response()->json(['success' => true, 'message' => 'Account reactivated.', 'data' => $user]);
     }
 
     // POST /api/admin/accounts

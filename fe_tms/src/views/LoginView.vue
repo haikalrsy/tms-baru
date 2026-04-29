@@ -135,6 +135,16 @@ async function onSubmit() {
       router.push(`/verify-email?email=${email.value}`)
       return
     }
+
+    // Akun suspended → backend auto-restore ke pending, arahkan ke pending-approval
+    if (code === 'ACCOUNT_REACTIVATION_REQUESTED') {
+      toast.info('Akun kamu sebelumnya disuspend. Permintaan reaktivasi sudah dikirim ke admin.', {
+        duration: 6000,
+      })
+      router.push('/pending-approval?reason=reactivation')
+      return
+    }
+
     if (status === 'pending') {
       router.push('/pending-approval')
       return

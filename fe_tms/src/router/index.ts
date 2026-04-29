@@ -28,11 +28,11 @@ const router = createRouter({
     },
     {
       path: '/auth/callback',
-      component: () => import('@/views/AuthCallbackView.vue'),
+      component: () => import('@/views/google/AuthCallbackView.vue'),
     },
     {
       path: '/auth/google/complete',
-      component: () => import('@/views/GoogleCompleteView.vue'),
+      component: () => import('@/views/google/GoogleCompleteView.vue'),
     },
 
     // ── Admin ────────────────────────────────────────────────
@@ -40,14 +40,26 @@ const router = createRouter({
       path: '/admin',
       component: () => import('@/views/admin/AdminLayoutView.vue'),
       children: [
-        { path: '',           component: () => import('@/views/admin/AdminOverviewView.vue') },
-        { path: 'accounts',   component: () => import('@/views/admin/AccountsView.vue') },
-        { path: 'deliveries', component: () => import('@/views/admin/DeliveriesView.vue') },
-        { path: 'drivers',    component: () => import('@/views/admin/DriversView.vue') },
-        { path: 'vehicles',   component: () => import('@/views/admin/VehiclesView.vue') },
-        { path: 'warehouses', component: () => import('@/views/admin/WarehousesView.vue') },
-        { path: 'stock',      component: () => import('@/views/admin/StockView.vue') },
-        { path: 'notes',      component: () => import('@/views/admin/tms/DeliveryNotesView.vue') },
+        { path: '',                component: () => import('@/views/admin/AdminOverviewView.vue') },
+        { path: 'accounts',        component: () => import('@/views/admin/AccountsView.vue') },
+        { path: 'deliveries',      component: () => import('@/views/admin/DeliveriesView.vue') },
+        { path: 'drivers',         component: () => import('@/views/admin/DriversView.vue') },
+        { path: 'vehicles',        component: () => import('@/views/admin/VehiclesView.vue') },
+        { path: 'warehouses',      component: () => import('@/views/admin/wms/WarehousesView.vue') },
+        { path: 'notes',           component: () => import('@/views/admin/tms/DeliveryNotesView.vue') },
+        { path: 'sales-orders',    component: () => import('@/views/admin/wms/SalesOrderView.vue') },
+        { path: 'logistics-map',   component: () => import('@/views/admin/wms/LogisticsMap.vue') },
+      ],
+    },
+
+    // ── Driver ────────────────────────────────────────────────
+    {
+      path: '/driver',
+      component: () => import('@/views/driver/DriverView.vue'),
+      children: [
+        { path: '',          component: () => import('@/views/driver/wms/DriverHomeView.vue') },
+        { path: 'transfers', component: () => import('@/views/driver/wms/DriverTransferView.vue') },
+        { path: 'map',       component: () => import('@/views/driver/wms/DriverMapView.vue') },
       ],
     },
 
@@ -57,4 +69,4 @@ const router = createRouter({
 })
 
 export default router
-export { router } 
+export { router }

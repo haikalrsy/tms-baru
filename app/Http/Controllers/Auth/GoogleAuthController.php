@@ -11,10 +11,6 @@ use Illuminate\Support\Str;
 
 class GoogleAuthController extends Controller
 {
-    /**
-     * Daftar email yang otomatis mendapat role admin.
-     * Tambah/kurangi sesuai kebutuhan.
-     */
     private array $adminEmails = [
         'admintms01@gmail.com',
         'admintms02@gmail.com',
@@ -23,7 +19,7 @@ class GoogleAuthController extends Controller
     // GET /api/auth/google
     public function redirect()
     {
-        $url = Socialite::driver('google')->stateless()->redirect()->getTargetUrl();
+        $url = Socialite::driver('google')->stateless()->with(['prompt' => 'select_account'])->redirect()->getTargetUrl();
         return response()->json(['success' => true, 'url' => $url]);
     }
 
@@ -38,13 +34,14 @@ class GoogleAuthController extends Controller
 
         $isAdminEmail = in_array($googleUser->getEmail(), $this->adminEmails);
 
-        $user = User::where('google_id', $googleUser->getId())
+        // Pakai withTrashed() supaya user yang soft-deleted (suspended) tetap ketemu
+        $user = User::withTrashed()
+                    ->where('google_id', $googleUser->getId())
                     ->orWhere('email', $googleUser->getEmail())
                     ->first();
 
         // ── Case Admin: Email terdaftar sebagai admin
         if ($isAdminEmail) {
-            // Buat akun admin jika belum ada
             if (!$user) {
                 $user = User::create([
                     'name'              => $googleUser->getName(),
@@ -58,7 +55,6 @@ class GoogleAuthController extends Controller
                 ]);
                 ActivityLog::log('auth.admin_register', $user, [], [], $user->id);
             } else {
-                // Pastikan role & status selalu admin + approved (tidak bisa diubah)
                 $user->update([
                     'role'           => 'admin',
                     'account_status' => 'approved',
@@ -67,7 +63,6 @@ class GoogleAuthController extends Controller
                 ]);
             }
 
-            // Hapus token lama, buat token baru dengan akses penuh
             $user->tokens()->where('name', 'api')->delete();
             $token = $user->createToken('api', ['*'], now()->addHours(12))->plainTextToken;
 
@@ -77,7 +72,24 @@ class GoogleAuthController extends Controller
             return redirect(config('app.frontend_url') . '/auth/callback?token=' . $token);
         }
 
-        // ── Case 1: User biasa, sudah ada & approved → langsung login
+        // ── Case Suspended: Soft-deleted → restore, set pending, tampilkan pesan
+        if ($user && $user->trashed()) {
+            $user->restore();
+            $user->update([
+                'account_status' => 'pending',
+                'google_id'      => $user->google_id ?? $googleUser->getId(),
+                'avatar'         => $googleUser->getAvatar(),
+            ]);
+            ActivityLog::log('auth.google_reactivation_requested', $user, [], [], $user->id);
+
+            return redirect(
+                config('app.frontend_url') .
+                '/auth/google/complete?status=suspended_reactivation' .
+                '&need_phone=0'
+            );
+        }
+
+        // ── Case 1: Driver, sudah ada & approved → langsung login
         if ($user && $user->account_status === 'approved') {
             if (!$user->google_id) {
                 $user->update([
@@ -100,7 +112,7 @@ class GoogleAuthController extends Controller
             return redirect(config('app.frontend_url') . '/auth/callback?token=' . $token);
         }
 
-        // ── Case 2: Sudah ada tapi pending/rejected/suspended
+        // ── Case 2: Sudah ada tapi pending/rejected
         if ($user) {
             $tempToken = $user->createToken('temp', ['temp:google'])->plainTextToken;
             $needPhone = is_null($user->phone) ? '1' : '0';
